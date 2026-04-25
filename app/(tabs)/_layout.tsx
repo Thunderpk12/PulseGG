@@ -15,7 +15,6 @@ function GameTabBar({ state, descriptors, navigation }: any) {
     { name: 'shop',    icon: '🛒',  label: 'Shop'    },
     { name: 'profile', icon: '🧙',  label: 'Profile' },
   ];
-  // Note: 'two' tab removed — was an empty orphaned screen
 
   return (
     <View style={[s.bar, { paddingBottom: insets.bottom || 8 }]}>

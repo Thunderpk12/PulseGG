@@ -1,8 +1,3 @@
-/**
- * playerStore.ts
- * Holds live player stats synced from Supabase.
- * Provides XP/coin/streak mutation helpers that write back to DB.
- */
 import { create } from 'zustand';
 import { fetchProfile, updateProfile, Profile } from '../utils/habitService';
 import {
@@ -15,20 +10,14 @@ import {
 } from '../utils/gamification';
 
 interface PlayerState {
-  // Raw DB fields
   profile: Profile | null;
-  // Derived / convenience
   title: string;
-  /** XP within current level (for XpBar) */
   currentLevelXp: number;
-  /** Max XP within current level (for XpBar) */
   maxLevelXp: number;
-  // UI state
   isLoading: boolean;
   justLeveledUp: boolean;
   newLevel: number;
 
-  // Actions
   loadProfile: (userId: string) => Promise<void>;
   awardXp: (userId: string, amount: number) => Promise<{ leveledUp: boolean; newLevel: number }>;
   awardCoins: (userId: string, amount: number) => Promise<void>;
@@ -86,7 +75,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       newLevel: result.newLevel,
     });
 
-    // Persist to Supabase
     await updateProfile(userId, { xp: result.newTotalXp, level: result.newLevel });
 
     return { leveledUp: result.leveledUp, newLevel: result.newLevel };

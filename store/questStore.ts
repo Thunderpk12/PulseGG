@@ -1,7 +1,3 @@
-/**
- * questStore.ts
- * Holds today's habits with real-time completion tracking.
- */
 import { create } from 'zustand';
 import {
   fetchTodayHabits,
@@ -61,7 +57,6 @@ export const useQuestStore = create<QuestState>((set, get) => ({
       return { success: false, xpGained: 0, coinsGained: 0, leveledUp: false, newLevel: profile.level };
     }
 
-    // Optimistic update
     set({
       habits: habits.map((h) =>
         h.id === habitId ? { ...h, isCompletedToday: true } : h
@@ -70,7 +65,6 @@ export const useQuestStore = create<QuestState>((set, get) => ({
 
     const result = await completeHabit(habit, userId, profile, activeBossId);
 
-    // Rollback on failure
     if (!result.success) {
       set({
         habits: habits.map((h) =>
@@ -79,7 +73,6 @@ export const useQuestStore = create<QuestState>((set, get) => ({
         error: 'Failed to complete quest. Please try again.',
       });
     } else {
-      // Update streak on successful completion
       const { updateStreak } = usePlayerStore.getState();
       await updateStreak(userId);
     }
