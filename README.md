@@ -1,77 +1,81 @@
-# ⚔️ QuestHabit — Level Up Your Life
+# QuestHabit — Gamified Habit Tracker
 
-> Turn your daily habits into an epic RPG adventure. Complete quests, earn XP and gold, fight weekly bosses, and customize your hero.
+> A mobile and web application that transforms daily habits into a role-playing game experience. Users complete quests, earn XP and gold, progress through character levels, and engage with weekly boss encounters.
 
 ---
 
-## 📖 What is QuestHabit?
+## Overview
 
-QuestHabit is a **gamified habit tracker** built for mobile and web. Instead of boring checkboxes, every habit becomes a **quest** with difficulty levels, XP rewards, and gold coins. As you complete quests daily, your character levels up, your streak grows, and you deal damage to a shared **weekly boss**.
+QuestHabit is a gamified habit tracker built with React Native and Expo. Every habit is represented as a quest with configurable difficulty, XP rewards, and gold coin payouts. Consistent daily completion grows a streak counter, levels up the user's character, and contributes damage to a shared weekly boss.
 
 ### Core Features
 
 | Feature | Description |
 |---|---|
-| ⚔️ **Quest Board** | Create and complete daily/weekly habits with Easy / Medium / Hard difficulty |
-| 🧙 **Hero Profile** | XP bar, level, streak, title badge, and GP balance — all driven by real data |
-| 🐉 **Weekly Boss** | A shared boss with real-time HP — completing quests deals damage |
-| 🛒 **Hero's Shop** | Spend GP on icons, titles, and profile themes — with rarity tiers |
-| 🏅 **Achievements** | Unlock badges based on real progress (level, streak, GP earned) |
-| 🔔 **Reminders** | Schedule local notifications for any quest |
-| 🔐 **Auth** | Email + Google OAuth via Supabase — auto-profile creation on signup |
+| **Quest Board** | Create and complete daily or weekly habits with Easy, Medium, or Hard difficulty |
+| **Hero Profile** | XP bar, level, streak counter, title badge, and GP balance — all driven by live data |
+| **Weekly Boss** | A shared boss with real-time HP that decreases as quests are completed |
+| **Hero's Shop** | Spend GP on icons, titles, and profile themes across rarity tiers |
+| **Achievements** | Unlock badges based on measurable progress (level, streak, GP earned) |
+| **Reminders** | Schedule local push notifications for individual quests |
+| **Authentication** | Email and Google OAuth via Supabase, with automatic profile creation on signup |
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
+
 | Technology | Role |
 |---|---|
 | **React Native** (0.81) | Core mobile framework |
-| **Expo** (SDK 52) + **Expo Router** | File-based navigation, web + iOS + Android |
+| **Expo** (SDK 52) + **Expo Router** | File-based navigation targeting web, iOS, and Android |
 | **TypeScript** | Type safety across all layers |
-| **React Native StyleSheet** | All styling (migrated away from NativeWind for web compatibility) |
-| **Reanimated 3** | Entrance animations, slide transitions |
-| **React Native Animated** | Splash screen XP bar, glow pulse animations |
-| **Expo Google Fonts** | Plus Jakarta Sans · Fredoka One · Be Vietnam Pro · Nunito |
-| **Safe Area Context** | Proper insets on all devices |
+| **React Native StyleSheet** | Application styling (migrated away from NativeWind for web compatibility) |
+| **Reanimated 3** | Entrance animations and slide transitions |
+| **React Native Animated** | Splash screen XP bar and glow pulse animations |
+| **Expo Google Fonts** | Plus Jakarta Sans, Fredoka One, Be Vietnam Pro, Nunito |
+| **Safe Area Context** | Correct insets across all device sizes |
 
-### Backend & Data
+### Backend and Data
+
 | Technology | Role |
 |---|---|
-| **Supabase** | PostgreSQL database, Auth, real-time subscriptions |
-| **Supabase Auth** | Email/password + Google OAuth |
-| **PostgreSQL Triggers** | `handle_new_user` — auto-creates profile row on signup (SECURITY DEFINER) |
-| **Supabase RLS** | Row-level security policies per table |
-| **Supabase Realtime** | Live boss HP updates + quest completion sync |
+| **Supabase** | PostgreSQL database, authentication, and real-time subscriptions |
+| **Supabase Auth** | Email/password and Google OAuth |
+| **PostgreSQL Triggers** | `handle_new_user` — automatically creates a profile row on signup (SECURITY DEFINER) |
+| **Supabase RLS** | Row-level security policies applied per table |
+| **Supabase Realtime** | Live boss HP updates and quest completion sync |
 
 ### State Management
+
 | Technology | Role |
 |---|---|
 | **Zustand** | Lightweight stores: `authStore`, `playerStore`, `questStore`, `bossStore` |
 
 ### Notifications
+
 | Technology | Role |
 |---|---|
 | **Expo Notifications** | Local push notifications for habit reminders |
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 AdventurerApp/
 ├── app/
 │   ├── (auth)/
-│   │   ├── login.tsx          # Login + Register screen
-│   │   └── onboarding.tsx     # 3-step intro carousel (post-login)
+│   │   ├── login.tsx          # Login and registration screen
+│   │   └── onboarding.tsx     # 3-step intro carousel (shown post-login)
 │   ├── (tabs)/
-│   │   ├── _layout.tsx        # Custom gamified tab bar + FAB
+│   │   ├── _layout.tsx        # Custom gamified tab bar with FAB
 │   │   ├── index.tsx          # Home / Dashboard
 │   │   ├── quests.tsx         # Quest board with filters
 │   │   ├── shop.tsx           # Hero's Shop (3-column grid)
-│   │   └── profile.tsx        # Player profile + achievements
-│   ├── _layout.tsx            # Root layout, font loading, auth routing
+│   │   └── profile.tsx        # Player profile and achievements
+│   ├── _layout.tsx            # Root layout: font loading and auth routing
 │   └── new-quest.tsx          # New Quest modal
 ├── components/
 │   └── GameSplash.tsx         # Animated loading splash screen
@@ -79,23 +83,23 @@ AdventurerApp/
 │   └── Colors.ts              # Design token system (Material You dark theme)
 ├── store/
 │   ├── authStore.ts           # Session state
-│   ├── playerStore.ts         # XP, level, coins, streak
-│   ├── questStore.ts          # Habits + real-time completions
-│   └── bossStore.ts           # Weekly boss HP + real-time subscription
+│   ├── playerStore.ts         # XP, level, coins, and streak
+│   ├── questStore.ts          # Habits and real-time completions
+│   └── bossStore.ts           # Weekly boss HP and real-time subscription
 ├── utils/
 │   ├── habitService.ts        # Supabase data access layer
-│   ├── gamification.ts        # XP/level/streak/boss damage logic
+│   ├── gamification.ts        # XP, level, streak, and boss damage logic
 │   ├── notificationService.ts # Local notification helpers
-│   └── supabase.ts            # Supabase client
-├── supabase_setup.sql         # Full DB setup: tables, RLS, trigger, seed data
-└── run_migrations.js          # Script to apply migrations via Supabase API
+│   └── supabase.ts            # Supabase client configuration
+├── supabase_setup.sql         # Full database setup: tables, RLS, trigger, and seed data
+└── run_migrations.js          # Script to apply migrations via the Supabase API
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-### 1. Clone & Install
+### 1. Clone and Install
 
 ```bash
 git clone <your-repo>
@@ -114,7 +118,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 ### 3. Set Up the Database
 
-Open the **[Supabase SQL Editor](https://supabase.com/dashboard)** for your project and paste the contents of `supabase_setup.sql`. This creates:
+Open the [Supabase SQL Editor](https://supabase.com/dashboard) for your project and paste the contents of `supabase_setup.sql`. This creates:
 
 - All tables (`profiles`, `habits`, `habit_completions`, `shop_items`, etc.)
 - RLS policies
@@ -123,7 +127,7 @@ Open the **[Supabase SQL Editor](https://supabase.com/dashboard)** for your proj
 - Shop item seed data (24 items)
 - A weekly boss for the current week
 
-> ⚠️ Also go to **Authentication → Providers → Email** and disable **"Confirm email"** for development.
+> **Note:** In the Supabase dashboard, navigate to **Authentication > Providers > Email** and disable **"Confirm email"** for local development.
 
 ### 4. Run the App
 
@@ -140,23 +144,23 @@ npx expo run:android
 
 ---
 
-## 🎨 Design System
+## Design System
 
-All colors come from a **Material You** dark theme defined in `constants/Colors.ts`:
+All colors are defined in a Material You dark theme in `constants/Colors.ts`:
 
-| Token | Value | Use |
+| Token | Value | Usage |
 |---|---|---|
-| `surface` | `#0b1326` | App background |
-| `primaryContainer` | `#7c3aed` | Buttons, active states |
+| `surface` | `#0b1326` | Application background |
+| `primaryContainer` | `#7c3aed` | Buttons and active states |
 | `primary` | `#d2bbff` | Text on dark surfaces |
-| `secondary` | `#ffe083` | Gold / XP indicators |
-| `tertiary` | `#4de082` | Green / success states |
-| `error` | `#ffb4ab` | Boss HP, warnings |
+| `secondary` | `#ffe083` | Gold and XP indicators |
+| `tertiary` | `#4de082` | Success states |
+| `error` | `#ffb4ab` | Boss HP bar and warnings |
 
-All UI uses **pixel-style shadows** (`shadowOffset: { width: 4, height: 4 }, shadowRadius: 0`) to match the retro RPG aesthetic.
+UI components use pixel-style shadows (`shadowOffset: { width: 4, height: 4 }, shadowRadius: 0`) to reinforce the retro RPG aesthetic.
 
 ---
 
-## 📄 License
+## License
 
-MIT — build your own adventure.
+MIT
