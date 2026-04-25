@@ -173,6 +173,10 @@ export default function ShopScreen() {
   const filtered = filter === 'all' ? items : items.filter(i => i.type === filter);
   const userLevel = profile?.level ?? 1;
   const userCoins = profile?.coins ?? 0;
+  const equippedIds = new Set([
+    profile?.equipped_icon_id,
+    profile?.equipped_title_id,
+  ].filter(Boolean) as string[]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
@@ -262,7 +266,7 @@ export default function ShopScreen() {
             {filtered.map(item => {
               const levelReq = RARITY_LEVEL_REQ[item.rarity] ?? 1;
               const isOwned    = ownedIds.has(item.id);
-              const isEquipped = false; // TODO: check profile.equipped_icon_id etc.
+              const isEquipped = equippedIds.has(item.id);
               const isLocked   = !isOwned && userLevel < levelReq;
               return (
                 <ItemCard

@@ -249,6 +249,42 @@ export async function createHabit(
   return data as Habit;
 }
 
+/**
+ * Updates an existing habit's fields.
+ */
+export async function updateHabit(
+  habitId: string,
+  payload: Partial<CreateHabitPayload>
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('habits')
+    .update(payload)
+    .eq('id', habitId);
+
+  if (error) {
+    console.error('[habitService] updateHabit error:', error.message);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Soft-deletes a habit by setting is_active = false.
+ */
+export async function deleteHabit(habitId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('habits')
+    .update({ is_active: false })
+    .eq('id', habitId);
+
+  if (error) {
+    console.error('[habitService] deleteHabit error:', error.message);
+    return false;
+  }
+  return true;
+}
+
+
 // ──────────────────────────────────────────────
 // Shop
 // ──────────────────────────────────────────────

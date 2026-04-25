@@ -10,6 +10,7 @@ import { usePlayerStore } from '../../store/playerStore';
 import { useAuthStore } from '../../store/authStore';
 import { useBossStore } from '../../store/bossStore';
 import { Colors } from '../../constants/Colors';
+import { Habit } from '../../utils/habitService';
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -44,6 +45,20 @@ export default function QuestsScreen() {
     }
   };
 
+  const handleEdit = (habit: Habit) => {
+    router.push({
+      pathname: '/edit-quest',
+      params: {
+        id: habit.id,
+        name: habit.name,
+        category: habit.category,
+        difficulty: habit.difficulty,
+        frequency: habit.frequency,
+        reminder_time: habit.reminder_time ?? '',
+      },
+    } as any);
+  };
+
   const filtered = habits.filter((h) => {
     if (filter === 'active') return !h.isCompletedToday;
     if (filter === 'completed') return h.isCompletedToday;
@@ -59,7 +74,7 @@ export default function QuestsScreen() {
       <View style={s.header}>
         <View>
           <Text style={s.headerTitle}>My Quests</Text>
-          <Text style={s.headerSub}>{completed}/{total} completed today</Text>
+          <Text style={s.headerSub}>{completed}/{total} completed today · Hold to edit</Text>
         </View>
         <TouchableOpacity
           style={s.addBtn}
@@ -142,52 +157,59 @@ export default function QuestsScreen() {
             const rarity = RARITY[diff] ?? RARITY.easy;
             const icon = DIFF_ICONS[diff] ?? '⭐';
             return (
-              <View key={habit.id} style={[s.cardOuter, habit.isCompletedToday && s.cardOuterDone]}>
-                <View style={[s.cardInner, habit.isCompletedToday && s.cardInnerDone]}>
-                  {/* Icon box */}
-                  <View style={s.cardIconBox}>
-                    <Text style={s.cardIconText}>{icon}</Text>
-                  </View>
+              <TouchableOpacity
+                key={habit.id}
+                onLongPress={() => handleEdit(habit)}
+                delayLongPress={400}
+                activeOpacity={1}
+              >
+                <View style={[s.cardOuter, habit.isCompletedToday && s.cardOuterDone]}>
+                  <View style={[s.cardInner, habit.isCompletedToday && s.cardInnerDone]}>
+                    {/* Icon box */}
+                    <View style={s.cardIconBox}>
+                      <Text style={s.cardIconText}>{icon}</Text>
+                    </View>
 
-                  {/* Info */}
-                  <View style={s.cardInfo}>
-                    <View style={s.nameRow}>
-                      <Text style={[s.cardName, habit.isCompletedToday && s.cardNameDone]} numberOfLines={1}>
-                        {habit.name}
+                    {/* Info */}
+                    <View style={s.cardInfo}>
+                      <View style={s.nameRow}>
+                        <Text style={[s.cardName, habit.isCompletedToday && s.cardNameDone]} numberOfLines={1}>
+                          {habit.name}
+                        </Text>
+                        <View style={[s.rarityBadge, { borderColor: rarity.border + '55' }]}>
+                          <Text style={[s.rarityText, { color: rarity.color }]}>{rarity.label}</Text>
+                        </View>
+                      </View>
+                      <Text style={s.cardSub} numberOfLines={1}>
+                        {habit.category} · {habit.difficulty}
                       </Text>
-                      <View style={[s.rarityBadge, { borderColor: rarity.border + '55' }]}>
-                        <Text style={[s.rarityText, { color: rarity.color }]}>{rarity.label}</Text>
+                      <View style={s.rewardsRow}>
+                        <View style={s.xpBadge}>
+                          <Text style={s.xpBadgeText}>+{habit.xp_reward} XP</Text>
+                        </View>
+                        <View style={s.gpBadge}>
+                          <Text style={s.gpBadgeText}>+{habit.coin_reward} GP</Text>
+                        </View>
                       </View>
                     </View>
-                    <Text style={s.cardSub} numberOfLines={1}>
-                      {habit.category} · {habit.difficulty}
-                    </Text>
-                    <View style={s.rewardsRow}>
-                      <View style={s.xpBadge}>
-                        <Text style={s.xpBadgeText}>+{habit.xp_reward} XP</Text>
-                      </View>
-                      <View style={s.gpBadge}>
-                        <Text style={s.gpBadgeText}>+{habit.coin_reward} GP</Text>
-                      </View>
-                    </View>
-                  </View>
 
-                  {/* Check */}
-                  {habit.isCompletedToday ? (
-                    <View style={s.doneCircle}>
-                      <Text style={s.doneCheck}>✓</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={s.checkBtn}
-                      onPress={() => handleComplete(habit.id)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={s.checkBtnText}>✓</Text>
-                    </TouchableOpacity>
-                  )}
+                    {/* Check */}
+                    {habit.isCompletedToday ? (
+                      <View style={s.doneCircle}>
+                        <Text style={s.doneCheck}>✓</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={s.checkBtn}
+                        onPress={() => handleComplete(habit.id)}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={s.checkBtnText}>✓</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}

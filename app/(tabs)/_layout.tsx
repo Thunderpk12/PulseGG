@@ -15,6 +15,7 @@ function GameTabBar({ state, descriptors, navigation }: any) {
     { name: 'shop',    icon: '🛒',  label: 'Shop'    },
     { name: 'profile', icon: '🧙',  label: 'Profile' },
   ];
+  // Note: 'two' tab removed — was an empty orphaned screen
 
   return (
     <View style={[s.bar, { paddingBottom: insets.bottom || 8 }]}>
@@ -80,6 +81,7 @@ export default function TabLayout() {
       <Tabs.Screen name="quests"  options={{ title: 'Quests'  }} />
       <Tabs.Screen name="shop"    options={{ title: 'Shop'    }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="two"     options={{ href: null }}       />
     </Tabs>
   );
 }

@@ -7,11 +7,14 @@ import {
   fetchTodayHabits,
   completeHabit,
   createHabit,
+  updateHabit,
+  deleteHabit,
   Habit,
   Profile,
   CreateHabitPayload,
 } from '../utils/habitService';
 import { supabase } from '../utils/supabase';
+import { usePlayerStore } from './playerStore';
 
 interface CompleteResult {
   success: boolean;
@@ -34,6 +37,8 @@ interface QuestState {
     activeBossId: string | null
   ) => Promise<CompleteResult>;
   createQuest: (userId: string, payload: CreateHabitPayload) => Promise<boolean>;
+  editQuest: (habitId: string, payload: Partial<CreateHabitPayload>) => Promise<boolean>;
+  deleteQuest: (habitId: string) => Promise<boolean>;
   subscribeToCompletions: (userId: string) => () => void;
   reset: () => void;
 }
@@ -73,6 +78,10 @@ export const useQuestStore = create<QuestState>((set, get) => ({
         ),
         error: 'Failed to complete quest. Please try again.',
       });
+    } else {
+      // Update streak on successful completion
+      const { updateStreak } = usePlayerStore.getState();
+      await updateStreak(userId);
     }
 
     return result;
@@ -84,6 +93,28 @@ export const useQuestStore = create<QuestState>((set, get) => ({
 
     set((state) => ({
       habits: [...state.habits, { ...newHabit, isCompletedToday: false }],
+    }));
+    return true;
+  },
+
+  editQuest: async (habitId: string, payload: Partial<CreateHabitPayload>) => {
+    const success = await updateHabit(habitId, payload);
+    if (!success) return false;
+
+    set((state) => ({
+      habits: state.habits.map((h) =>
+        h.id === habitId ? { ...h, ...payload } : h
+      ),
+    }));
+    return true;
+  },
+
+  deleteQuest: async (habitId: string) => {
+    const success = await deleteHabit(habitId);
+    if (!success) return false;
+
+    set((state) => ({
+      habits: state.habits.filter((h) => h.id !== habitId),
     }));
     return true;
   },

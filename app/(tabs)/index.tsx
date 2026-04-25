@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Image, Alert, Platform, Dimensions,
+  Image, Platform, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,7 @@ import { useBossStore } from '../../store/bossStore';
 import {
   xpThresholdForLevel, xpWithinCurrentLevel, xpForNextLevel, getTitleForLevel,
 } from '../../utils/gamification';
+import LevelUpModal from '../../components/LevelUpModal';
 
 const AVATAR_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHVZxbBAw1MZDO54u_X6P655WRbDFzfgp5haeDsIbXuMOo_B5pIwBH_W2b9cFNtigxWRF2yCx1IMSdbzZ1BJ7MpqtIlDNrWOp0xXsHZY4dTD_EatPQSwIk_06fzfWInCfG9eBiSlxYoR28eAXQHLOYYlPEth4BQTG3Odsdp068woiYSFRaER5xvBtjJKnvi6-Z34kIbzZWNi9M7EwW8xbHpsfLxLAPn-biEeZk-6CeONewjkdoXn1_-kBaeHY_OCHb0qPtK0bBT3c';
 const BANNER_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSpGqsTIqWdtC7YsEyDncvMOlQ5er3JAf5lUYXHNI4lVPkr96YNS9Qdaq7p4Aq4jCGCvVp8EDhskyz2gjYoyhre2NjfGV43yf6a148TNXTsM4IJHk2FjKlWpFNjzsIEaG1ZZhr46qr3vRCNvDn_QTAvdfqTXHptUVjVeRUPiZvg23t2KSvZ7YSyO6_7lgUZbqv6qqzgZ9CTGm-RqTcOD6HpfmdUpWvNshXmT90Gb21DsTbLGChL_JHlX35iBZAF1_PxYT8GsuxHzg';
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   const { profile, title, currentLevelXp, maxLevelXp, justLeveledUp, newLevel, clearLevelUpFlag } = usePlayerStore();
   const { habits, isLoading, loadTodayHabits, completeQuest, subscribeToCompletions } = useQuestStore();
   const { boss } = useBossStore();
+  const [showLevelUp, setShowLevelUp] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -43,8 +45,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (justLeveledUp) {
-      Alert.alert('🎉 LEVEL UP!', `You reached Level ${newLevel}!\n${getTitleForLevel(newLevel)}`);
-      clearLevelUpFlag();
+      setShowLevelUp(true);
     }
   }, [justLeveledUp]);
 
@@ -79,6 +80,16 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
+      {/* ── LEVEL UP MODAL ───────────────────────────── */}
+      <LevelUpModal
+        visible={showLevelUp}
+        newLevel={newLevel}
+        title={getTitleForLevel(newLevel)}
+        onClose={() => {
+          setShowLevelUp(false);
+          clearLevelUpFlag();
+        }}
+      />
       {/* ── TOP HEADER ─────────────────────────────── */}
       <View style={s.topBar}>
         <Text style={s.brandName}>Adventurer</Text>
