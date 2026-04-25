@@ -1,59 +1,112 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { supabase } from '../utils/supabase';
+import { useAuthStore } from '../store/authStore';
+import { usePlayerStore } from '../store/playerStore';
+import { useBossStore } from '../store/bossStore';
+import { View } from 'react-native';
+import { Colors } from '../constants/Colors';
+import GameSplash from '../components/GameSplash';
+import { requestNotificationPermission } from '../utils/notificationService';
+import {
+  useFonts,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_700Bold,
+} from '@expo-google-fonts/nunito';
+import { FredokaOne_400Regular } from '@expo-google-fonts/fredoka-one';
+import {
+  BeVietnamPro_400Regular,
+  BeVietnamPro_500Medium,
+  BeVietnamPro_700Bold,
+} from '@expo-google-fonts/be-vietnam-pro';
+import * as SplashScreen from 'expo-splash-screen';
+import "../global.css";
 
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
+  const { session, isLoading, setSession, setUser, setLoading } = useAuthStore();
+  const { loadProfile, reset: resetPlayer } = usePlayerStore();
+  const { loadBoss, subscribeToHpUpdates, reset: resetBoss } = useBossStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_700Bold,
+    FredokaOne_400Regular,
+    BeVietnamPro_400Regular,
+    BeVietnamPro_500Medium,
+    BeVietnamPro_700Bold,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  // Auth state listener
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((e) => {
+      console.warn("Supabase session error:", e);
+      setLoading(false);
+    });
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Hide splash once fonts are ready
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  // Bootstrap player data after sign-in
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!session && !inAuthGroup) {
+      resetPlayer();
+      resetBoss();
+      router.replace('/(auth)/login');
+    } else if (session && inAuthGroup) {
+      router.replace('/(tabs)');
+    } else if (session && !inAuthGroup) {
+      const userId = session.user.id;
+      loadProfile(userId);
+      loadBoss();
+      const unsubBoss = subscribeToHpUpdates();
+      requestNotificationPermission().catch(() => {});
+      return () => { unsubBoss(); };
     }
-  }, [loaded]);
+  }, [session, isLoading, segments]);
 
-  if (!loaded) {
-    return null;
+  if (!fontsLoaded || isLoading) {
+    return <GameSplash />;
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="new-quest"
+        options={{ headerShown: false, presentation: 'modal' }}
+      />
+    </Stack>
   );
 }
