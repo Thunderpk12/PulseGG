@@ -161,6 +161,6 @@ UI components use pixel-style shadows (`shadowOffset: { width: 4, height: 4 }, s
 
 ---
 
-## License
+
 
 MIT
