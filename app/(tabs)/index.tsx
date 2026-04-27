@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Image, Platform, Dimensions,
+  Image, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,9 +11,11 @@ import { usePlayerStore } from '../../store/playerStore';
 import { useQuestStore } from '../../store/questStore';
 import { useBossStore } from '../../store/bossStore';
 import {
-  xpThresholdForLevel, xpWithinCurrentLevel, xpForNextLevel, getTitleForLevel,
+  xpWithinCurrentLevel, xpForNextLevel, getTitleForLevel,
 } from '../../utils/gamification';
 import LevelUpModal from '../../components/LevelUpModal';
+import QuestCompleteToast from '../../components/QuestCompleteToast';
+import { fetchWeekCompletionDays } from '../../utils/weeklyService';
 
 const AVATAR_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHVZxbBAw1MZDO54u_X6P655WRbDFzfgp5haeDsIbXuMOo_B5pIwBH_W2b9cFNtigxWRF2yCx1IMSdbzZ1BJ7MpqtIlDNrWOp0xXsHZY4dTD_EatPQSwIk_06fzfWInCfG9eBiSlxYoR28eAXQHLOYYlPEth4BQTG3Odsdp068woiYSFRaER5xvBtjJKnvi6-Z34kIbzZWNi9M7EwW8xbHpsfLxLAPn-biEeZk-6CeONewjkdoXn1_-kBaeHY_OCHb0qPtK0bBT3c';
 const BANNER_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSpGqsTIqWdtC7YsEyDncvMOlQ5er3JAf5lUYXHNI4lVPkr96YNS9Qdaq7p4Aq4jCGCvVp8EDhskyz2gjYoyhre2NjfGV43yf6a148TNXTsM4IJHk2FjKlWpFNjzsIEaG1ZZhr46qr3vRCNvDn_QTAvdfqTXHptUVjVeRUPiZvg23t2KSvZ7YSyO6_7lgUZbqv6qqzgZ9CTGm-RqTcOD6HpfmdUpWvNshXmT90Gb21DsTbLGChL_JHlX35iBZAF1_PxYT8GsuxHzg';
@@ -35,11 +37,14 @@ export default function HomeScreen() {
   const { habits, isLoading, loadTodayHabits, completeQuest, subscribeToCompletions } = useQuestStore();
   const { boss } = useBossStore();
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; xp: number; gp: number }>({ visible: false, xp: 0, gp: 0 });
+  const [weekDays, setWeekDays] = useState<boolean[]>(Array(7).fill(false));
 
   useEffect(() => {
     if (!user?.id) return;
     loadTodayHabits(user.id);
     const unsub = subscribeToCompletions(user.id);
+    fetchWeekCompletionDays(user.id).then(setWeekDays);
     return () => unsub();
   }, [user?.id]);
 
@@ -51,11 +56,14 @@ export default function HomeScreen() {
 
   const handleComplete = async (habitId: string) => {
     if (!user?.id || !profile) return;
-    const result = await completeQuest(habitId, user.id, profile, boss?.id ?? null);
-    if (result.success) {
-      const { loadProfile } = usePlayerStore.getState();
-      await loadProfile(user.id);
+    const habit = habits.find(h => h.id === habitId);
+    await completeQuest(habitId, user.id, profile, boss?.id ?? null);
+    // loadProfile + level-up detection now handled inside questStore.completeQuest
+    if (habit) {
+      setToast({ visible: true, xp: habit.xp_reward, gp: habit.coin_reward });
     }
+    // Refresh weekly streak bar
+    if (user?.id) fetchWeekCompletionDays(user.id).then(setWeekDays);
   };
 
   // Derived stats
@@ -80,6 +88,13 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
+      {/* ── QUEST COMPLETE TOAST ─────────────────────── */}
+      <QuestCompleteToast
+        visible={toast.visible}
+        xp={toast.xp}
+        gp={toast.gp}
+        onHide={() => setToast(prev => ({ ...prev, visible: false }))}
+      />
       {/* ── LEVEL UP MODAL ───────────────────────────── */}
       <LevelUpModal
         visible={showLevelUp}
@@ -144,13 +159,13 @@ export default function HomeScreen() {
           <Text style={s.streakFlame}>🔥</Text>
           <Text style={s.streakNum}>{streak}</Text>
           <Text style={s.streakLabel}>DAY STREAK</Text>
-          {/* 7-day bar */}
+          {/* 7-day bar — real data */}
           <View style={s.weekBars}>
-            {Array.from({ length: 7 }).map((_, i) => (
-              <View key={i} style={[s.dayBar, i < Math.min(streak % 7 || (streak > 0 ? 7 : 0), 7) ? s.dayBarActive : s.dayBarInactive]} />
+            {weekDays.map((active, i) => (
+              <View key={i} style={[s.dayBar, active ? s.dayBarActive : s.dayBarInactive]} />
             ))}
           </View>
-          <Text style={s.weekSubtext}>{Math.min(streak, 7)}/7 days this week</Text>
+          <Text style={s.weekSubtext}>{weekDays.filter(Boolean).length}/7 days this week</Text>
         </View>
 
         {/* ── WEEKLY BOSS ───────────────────────────── */}
@@ -172,7 +187,7 @@ export default function HomeScreen() {
             <View style={s.bossHpRow}>
               <Text style={s.bossHpLabel}>❤️ HP</Text>
               <Text style={s.bossHpValue}>
-                {boss.current_hp.toLocaleString()} / {boss.max_hp.toLocaleString()}
+                {Math.max(0, boss.current_hp).toLocaleString()} / {boss.max_hp.toLocaleString()}
               </Text>
             </View>
             <View style={s.bossHpTrack}>
@@ -184,7 +199,15 @@ export default function HomeScreen() {
                 ]}
               />
             </View>
-            {!boss.is_defeated && (
+            {boss.is_defeated ? (
+              <View style={s.bossDefeatedBanner}>
+                <Text style={s.bossDefeatedBannerIcon}>🏆</Text>
+                <View>
+                  <Text style={s.bossDefeatedBannerTitle}>BOSS DEFEATED!</Text>
+                  <Text style={s.bossDefeatedBannerSub}>New boss arrives next Monday</Text>
+                </View>
+              </View>
+            ) : (
               <Text style={s.bossTip}>Complete quests to deal damage! 🗡️</Text>
             )}
           </View>
@@ -280,9 +303,20 @@ function QuestCardRow({
   title: string; subtitle: string; difficulty: string; xpReward: number;
   gpReward: number; isCompleted: boolean; onComplete: () => void;
 }) {
-  const diff  = difficulty.toLowerCase() as keyof typeof RARITY;
+  const diff   = difficulty.toLowerCase() as keyof typeof RARITY;
   const rarity = RARITY[diff] ?? RARITY.easy;
   const icon   = DIFF_ICONS[diff] ?? '⭐';
+  const bounceAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    bounceAnim.setValue(1);
+    Animated.sequence([
+      Animated.spring(bounceAnim, { toValue: 0.7, useNativeDriver: true, tension: 300, friction: 5 }),
+      Animated.spring(bounceAnim, { toValue: 1.3, useNativeDriver: true, tension: 300, friction: 5 }),
+      Animated.spring(bounceAnim, { toValue: 1,   useNativeDriver: true, tension: 200, friction: 6 }),
+    ]).start();
+    onComplete();
+  };
 
   return (
     <View style={[s.questOuter, isCompleted && s.questOuterDone]}>
@@ -320,15 +354,19 @@ function QuestCardRow({
               <Text style={s.doneCheck}>✓</Text>
             </View>
           ) : (
-            <TouchableOpacity style={s.checkBtn} onPress={onComplete} activeOpacity={0.75}>
-              <Text style={s.checkBtnText}>✓</Text>
-            </TouchableOpacity>
+            <Animated.View style={{ transform: [{ scale: bounceAnim }] }}>
+              <TouchableOpacity style={s.checkBtn} onPress={handlePress} activeOpacity={0.75}>
+                <Text style={s.checkBtnText}>✓</Text>
+              </TouchableOpacity>
+            </Animated.View>
           )}
         </View>
       </View>
     </View>
   );
 }
+
+
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -437,6 +475,20 @@ const s = StyleSheet.create({
   bossHpTrack: { height: 16, backgroundColor: Colors.surfaceContainerLowest, borderRadius: 8, overflow: 'hidden', borderWidth: 2, borderColor: Colors.surfaceVariant },
   bossHpFill: { height: '100%', backgroundColor: Colors.error, borderRadius: 8 },
   bossTip: { fontFamily: 'BeVietnamPro_400Regular', fontSize: 11, color: Colors.onSurfaceVariant, marginTop: 10, textAlign: 'center' },
+  bossDefeatedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginTop: 12,
+    backgroundColor: Colors.tertiaryContainer + '44',
+    borderRadius: 10, padding: 12,
+    borderWidth: 1, borderColor: Colors.tertiary + '55',
+  },
+  bossDefeatedBannerIcon: { fontSize: 28 },
+  bossDefeatedBannerTitle: {
+    fontFamily: 'FredokaOne_400Regular', fontSize: 16, color: Colors.tertiary,
+  },
+  bossDefeatedBannerSub: {
+    fontFamily: 'BeVietnamPro_400Regular', fontSize: 10, color: Colors.onSurfaceVariant, marginTop: 1,
+  },
 
   // Streak card
   streakCard: {

@@ -10,10 +10,11 @@ function GameTabBar({ state, descriptors, navigation }: any) {
   const router = useRouter();
 
   const TABS = [
-    { name: 'index',   icon: '⚔️',  label: 'Home'    },
-    { name: 'quests',  icon: '📋',  label: 'Quests'  },
-    { name: 'shop',    icon: '🛒',  label: 'Shop'    },
-    { name: 'profile', icon: '🧙',  label: 'Profile' },
+    { name: 'index',   icon: '⚔️',  label: 'Home'      },
+    { name: 'quests',  icon: '📋',  label: 'Quests'    },
+    { name: 'shop',    icon: '🛒',  label: 'Shop'      },
+    { name: 'two',     icon: '🏆',  label: 'Ranks'     },
+    { name: 'profile', icon: '🧙',  label: 'Profile'   },
   ];
 
   return (
@@ -49,7 +50,7 @@ function GameTabBar({ state, descriptors, navigation }: any) {
       </View>
 
       {/* ── RIGHT TABS ─── */}
-      {TABS.slice(2, 4).map((tab) => {
+      {TABS.slice(2, 5).map((tab) => {
         const route = state.routes.find((r: any) => r.name === tab.name);
         const focused = route ? state.index === state.routes.indexOf(route) : false;
         return (
@@ -76,11 +77,11 @@ export default function TabLayout() {
       tabBar={(props) => <GameTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index"   options={{ title: 'Home'    }} />
-      <Tabs.Screen name="quests"  options={{ title: 'Quests'  }} />
-      <Tabs.Screen name="shop"    options={{ title: 'Shop'    }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-      <Tabs.Screen name="two"     options={{ href: null }}       />
+      <Tabs.Screen name="index"   options={{ title: 'Home'        }} />
+      <Tabs.Screen name="quests"  options={{ title: 'Quests'      }} />
+      <Tabs.Screen name="shop"    options={{ title: 'Shop'        }} />
+      <Tabs.Screen name="two"     options={{ title: 'Leaderboard' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile'     }} />
     </Tabs>
   );
 }

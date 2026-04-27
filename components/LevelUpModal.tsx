@@ -13,31 +13,32 @@ interface LevelUpModalProps {
 }
 
 const { width } = Dimensions.get('window');
+const NUM_RAYS = 12;
 
 export default function LevelUpModal({ visible, newLevel, title, onClose }: LevelUpModalProps) {
   const scaleAnim   = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const glowAnim    = useRef(new Animated.Value(0)).current;
   const starAnim    = useRef(new Animated.Value(0)).current;
+  const rayAnim     = useRef(new Animated.Value(0)).current;
+  const raysOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
-      // Reset
-      scaleAnim.setValue(0);
-      opacityAnim.setValue(0);
-      glowAnim.setValue(0);
-      starAnim.setValue(0);
+      // Reset all
+      [scaleAnim, opacityAnim, glowAnim, starAnim, rayAnim, raysOpacity].forEach(a => a.setValue(0));
 
+      // Main entrance sequence
       Animated.sequence([
-        // Fade in backdrop
-        Animated.timing(opacityAnim, {
-          toValue: 1, duration: 200, useNativeDriver: true,
-        }),
-        // Pop in card
-        Animated.spring(scaleAnim, {
-          toValue: 1, friction: 5, tension: 120, useNativeDriver: true,
-        }),
+        Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.spring(scaleAnim,   { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }),
       ]).start();
+
+      // Rays: fade in then spin forever
+      Animated.timing(raysOpacity, { toValue: 1, duration: 400, delay: 300, useNativeDriver: true }).start();
+      Animated.loop(
+        Animated.timing(rayAnim, { toValue: 1, duration: 8000, easing: Easing.linear, useNativeDriver: true })
+      ).start();
 
       // Glow pulse loop
       Animated.loop(
@@ -47,7 +48,7 @@ export default function LevelUpModal({ visible, newLevel, title, onClose }: Leve
         ])
       ).start();
 
-      // Stars spin
+      // Stars spin (dot ring)
       Animated.loop(
         Animated.timing(starAnim, { toValue: 1, duration: 3000, easing: Easing.linear, useNativeDriver: true })
       ).start();
@@ -56,28 +57,48 @@ export default function LevelUpModal({ visible, newLevel, title, onClose }: Leve
 
   const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.45] });
   const starRotate  = starAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const rayRotate   = rayAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
       <Animated.View style={[s.backdrop, { opacity: opacityAnim }]}>
         <Animated.View style={[s.card, { transform: [{ scale: scaleAnim }] }]}>
 
+          {/* ── Light Rays ── */}
+          <Animated.View
+            style={[
+              s.raysContainer,
+              { opacity: raysOpacity, transform: [{ rotate: rayRotate }] },
+            ]}
+            pointerEvents="none"
+          >
+            {Array.from({ length: NUM_RAYS }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  s.ray,
+                  {
+                    transform: [
+                      { rotate: `${(360 / NUM_RAYS) * i}deg` },
+                      { translateY: -90 },
+                    ],
+                  },
+                ]}
+              />
+            ))}
+          </Animated.View>
+
           {/* Pulsing glow ring */}
           <Animated.View style={[s.glowRing, { opacity: glowOpacity }]} />
 
-          {/* Spinning star ring */}
+          {/* Spinning star dot ring */}
           <Animated.View style={[s.starRing, { transform: [{ rotate: starRotate }] }]}>
             {[...Array(8)].map((_, i) => (
               <View
                 key={i}
                 style={[
                   s.starDot,
-                  {
-                    transform: [
-                      { rotate: `${i * 45}deg` },
-                      { translateY: -60 },
-                    ],
-                  },
+                  { transform: [{ rotate: `${i * 45}deg` }, { translateY: -60 }] },
                 ]}
               />
             ))}
@@ -104,6 +125,7 @@ export default function LevelUpModal({ visible, newLevel, title, onClose }: Leve
     </Modal>
   );
 }
+
 
 const s = StyleSheet.create({
   backdrop: {

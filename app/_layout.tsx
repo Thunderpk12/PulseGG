@@ -107,6 +107,10 @@ export default function RootLayout() {
         name="new-quest"
         options={{ headerShown: false, presentation: 'modal' }}
       />
+      <Stack.Screen
+        name="edit-quest"
+        options={{ headerShown: false, presentation: 'modal' }}
+      />
     </Stack>
   );
 }

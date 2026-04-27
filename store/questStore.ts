@@ -57,15 +57,18 @@ export const useQuestStore = create<QuestState>((set, get) => ({
       return { success: false, xpGained: 0, coinsGained: 0, leveledUp: false, newLevel: profile.level };
     }
 
+    // Optimistic update
     set({
       habits: habits.map((h) =>
         h.id === habitId ? { ...h, isCompletedToday: true } : h
       ),
     });
 
+    const levelBefore = profile.level;
     const result = await completeHabit(habit, userId, profile, activeBossId);
 
     if (!result.success) {
+      // Rollback on failure
       set({
         habits: habits.map((h) =>
           h.id === habitId ? { ...h, isCompletedToday: false } : h
@@ -73,8 +76,19 @@ export const useQuestStore = create<QuestState>((set, get) => ({
         error: 'Failed to complete quest. Please try again.',
       });
     } else {
-      const { updateStreak } = usePlayerStore.getState();
-      await updateStreak(userId);
+      // Refresh profile from DB and detect level-up
+      const playerStore = usePlayerStore.getState();
+      await playerStore.updateStreak(userId);
+      await playerStore.loadProfile(userId);
+
+      // After reload, check if level changed to trigger the modal
+      const freshProfile = usePlayerStore.getState().profile;
+      if (freshProfile && freshProfile.level > levelBefore) {
+        usePlayerStore.setState({
+          justLeveledUp: true,
+          newLevel: freshProfile.level,
+        });
+      }
     }
 
     return result;

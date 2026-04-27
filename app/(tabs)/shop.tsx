@@ -51,7 +51,7 @@ const FEATURED = {
 
 // ─── Item card (3-column compact) ────────────────────────────────────────────
 function ItemCard({
-  item, owned, equipped, locked, levelReq, onBuy, buying, userCoins,
+  item, owned, equipped, locked, levelReq, onBuy, onEquip, buying, userCoins,
 }: {
   item: ShopItem;
   owned: boolean;
@@ -59,6 +59,7 @@ function ItemCard({
   locked: boolean;
   levelReq: number;
   onBuy: () => void;
+  onEquip: () => void;
   buying: boolean;
   userCoins: number;
 }) {
@@ -100,10 +101,20 @@ function ItemCard({
       </View>
 
       {/* Action button */}
-      {owned || equipped ? (
+      {equipped ? (
         <View style={s.ownedBtn}>
-          <Text style={s.ownedBtnText}>{equipped ? 'Equipped' : 'Owned'}</Text>
+          <Text style={s.ownedBtnText}>Equipped ✓</Text>
         </View>
+      ) : owned ? (
+        (item.type === 'icon' || item.type === 'title') ? (
+          <TouchableOpacity style={s.equipBtn} onPress={onEquip} activeOpacity={0.85}>
+            <Text style={s.equipBtnText}>Equip</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={s.ownedBtn}>
+            <Text style={s.ownedBtnText}>Owned</Text>
+          </View>
+        )
       ) : locked ? (
         <View style={s.lockedBtn}>
           <Text style={s.lockedBtnText}>Lvl {levelReq} Req.</Text>
@@ -163,12 +174,46 @@ export default function ShopScreen() {
     if (result.success) {
       setOwnedIds(prev => new Set([...prev, item.id]));
       await loadProfile(user.id);
-      Alert.alert('🎉 Purchased!', `"${item.name}" added to your collection!`);
+
+      // Offer to equip immediately after purchase (only for icon and title types)
+      if (item.type === 'icon' || item.type === 'title') {
+        Alert.alert(
+          '🎉 Purchased!',
+          `"${item.name}" added to your collection!\n\nEquip it now?`,
+          [
+            { text: 'Later', style: 'cancel' },
+            {
+              text: 'Equip ✓',
+              onPress: async () => {
+                const field = item.type === 'icon' ? 'equipped_icon_id' : 'equipped_title_id';
+                const { updateProfile } = await import('../../utils/habitService');
+                const ok = await updateProfile(user.id!, { [field]: item.id });
+                if (ok) await loadProfile(user.id!);
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('🎉 Purchased!', `"${item.name}" added to your collection!`);
+      }
     } else {
       Alert.alert('Purchase failed', result.message);
     }
     setBuying(null);
   };
+
+  const handleEquip = async (item: ShopItem) => {
+    if (!user?.id) return;
+    const field = item.type === 'icon' ? 'equipped_icon_id' : 'equipped_title_id';
+    const { updateProfile } = await import('../../utils/habitService');
+    const ok = await updateProfile(user.id, { [field]: item.id });
+    if (ok) {
+      await loadProfile(user.id);
+      Alert.alert('✓ Equipped!', `"${item.name}" is now active.`);
+    }
+  };
+
+
 
   const filtered = filter === 'all' ? items : items.filter(i => i.type === filter);
   const userLevel = profile?.level ?? 1;
@@ -220,7 +265,17 @@ export default function ShopScreen() {
               <Text style={{ fontSize: 18 }}>🪙</Text>
               <Text style={s.featuredPrice}>{FEATURED.price.toLocaleString()}</Text>
             </View>
-            <TouchableOpacity style={s.featuredBtn} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={[s.featuredBtn, (!profile || userCoins < FEATURED.price) && { opacity: 0.5 }]}
+              activeOpacity={0.85}
+              onPress={() => {
+                if (!profile || userCoins < FEATURED.price) {
+                  Alert.alert('⚠️ Not enough GP', `You need ${(FEATURED.price - userCoins).toLocaleString()} more GP for this legendary bundle.`);
+                } else {
+                  Alert.alert('🌟 Aether Vanguard Set', 'This bundle is coming soon! Check back next week.', [{ text: 'OK' }]);
+                }
+              }}
+            >
               <Text style={s.featuredBtnText}>UNLOCK NOW</Text>
             </TouchableOpacity>
           </View>
@@ -277,6 +332,7 @@ export default function ShopScreen() {
                   locked={isLocked}
                   levelReq={levelReq}
                   onBuy={() => handleBuy(item)}
+                  onEquip={() => handleEquip(item)}
                   buying={buying === item.id}
                   userCoins={userCoins}
                 />
@@ -448,6 +504,12 @@ const s = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.surfaceVariant,
   },
   lockedBtnText: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 9, color: Colors.error, textTransform: 'uppercase', letterSpacing: 0.3 },
+  equipBtn: {
+    width: '100%', backgroundColor: Colors.tertiaryContainer + '55',
+    borderRadius: 8, paddingVertical: 7, alignItems: 'center',
+    borderWidth: 2, borderColor: Colors.tertiary + '88',
+  },
+  equipBtnText: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 10, color: Colors.tertiary, textTransform: 'uppercase' },
 
   // States
   centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12 },

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useBossStore } from '../../store/bossStore';
 import { Colors } from '../../constants/Colors';
 import { Habit } from '../../utils/habitService';
+import QuestCompleteToast from '../../components/QuestCompleteToast';
 
 type Filter = 'all' | 'active' | 'completed';
 
@@ -31,6 +32,7 @@ export default function QuestsScreen() {
   const { habits, isLoading, loadTodayHabits, completeQuest } = useQuestStore();
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>('all');
+  const [toast, setToast] = useState<{ visible: boolean; xp: number; gp: number }>({ visible: false, xp: 0, gp: 0 });
 
   useEffect(() => {
     if (user?.id) loadTodayHabits(user.id);
@@ -38,10 +40,11 @@ export default function QuestsScreen() {
 
   const handleComplete = async (habitId: string) => {
     if (!user?.id || !profile) return;
+    const habit = habits.find(h => h.id === habitId);
     await completeQuest(habitId, user.id, profile, boss?.id ?? null);
-    if (user?.id) {
-      const { loadProfile } = usePlayerStore.getState();
-      await loadProfile(user.id);
+    // loadProfile + level-up detection handled inside questStore.completeQuest
+    if (habit) {
+      setToast({ visible: true, xp: habit.xp_reward, gp: habit.coin_reward });
     }
   };
 
@@ -70,6 +73,13 @@ export default function QuestsScreen() {
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
+      {/* ── QUEST COMPLETE TOAST ─────────────────────── */}
+      <QuestCompleteToast
+        visible={toast.visible}
+        xp={toast.xp}
+        gp={toast.gp}
+        onHide={() => setToast(prev => ({ ...prev, visible: false }))}
+      />
       {/* ── HEADER ─────────────────────────────────── */}
       <View style={s.header}>
         <View>
@@ -199,13 +209,7 @@ export default function QuestsScreen() {
                         <Text style={s.doneCheck}>✓</Text>
                       </View>
                     ) : (
-                      <TouchableOpacity
-                        style={s.checkBtn}
-                        onPress={() => handleComplete(habit.id)}
-                        activeOpacity={0.75}
-                      >
-                        <Text style={s.checkBtnText}>✓</Text>
-                      </TouchableOpacity>
+                      <BounceCheckBtn onPress={() => handleComplete(habit.id)} />
                     )}
                   </View>
                 </View>
@@ -216,6 +220,29 @@ export default function QuestsScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// ─── BounceCheckBtn ───────────────────────────────────────────────────────────
+function BounceCheckBtn({ onPress }: { onPress: () => void }) {
+  const bounceAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    bounceAnim.setValue(1);
+    Animated.sequence([
+      Animated.spring(bounceAnim, { toValue: 0.7, useNativeDriver: true, tension: 300, friction: 5 }),
+      Animated.spring(bounceAnim, { toValue: 1.3, useNativeDriver: true, tension: 300, friction: 5 }),
+      Animated.spring(bounceAnim, { toValue: 1,   useNativeDriver: true, tension: 200, friction: 6 }),
+    ]).start();
+    onPress();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: bounceAnim }] }}>
+      <TouchableOpacity style={s.checkBtn} onPress={handlePress} activeOpacity={0.75}>
+        <Text style={s.checkBtnText}>✓</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

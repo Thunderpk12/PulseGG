@@ -9,6 +9,7 @@ import { Colors } from '../constants/Colors';
 import { useAuthStore } from '../store/authStore';
 import { useQuestStore } from '../store/questStore';
 import { defaultXpReward, defaultCoinReward } from '../utils/gamification';
+import { scheduleHabitReminder, cancelAllReminders } from '../utils/notificationService';
 
 const CATEGORIES = ['Health', 'Study', 'Exercise', 'Work', 'Wellness', 'Hygiene', 'Sleep', 'Custom'];
 const DIFFICULTIES = [
@@ -65,6 +66,10 @@ export default function EditQuestModal() {
 
     setLoading(false);
     if (success) {
+      // Re-schedule notification if reminder changed
+      if (reminderTime && reminderTime !== params.reminder_time) {
+        await scheduleHabitReminder(name.trim(), reminderTime);
+      }
       router.back();
     } else {
       Alert.alert('Error', 'Failed to update quest. Please try again.');
