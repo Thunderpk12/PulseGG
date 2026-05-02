@@ -17,7 +17,7 @@ import LevelUpModal from '../../components/LevelUpModal';
 import QuestCompleteToast from '../../components/QuestCompleteToast';
 import { fetchWeekCompletionDays } from '../../utils/weeklyService';
 
-const AVATAR_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHVZxbBAw1MZDO54u_X6P655WRbDFzfgp5haeDsIbXuMOo_B5pIwBH_W2b9cFNtigxWRF2yCx1IMSdbzZ1BJ7MpqtIlDNrWOp0xXsHZY4dTD_EatPQSwIk_06fzfWInCfG9eBiSlxYoR28eAXQHLOYYlPEth4BQTG3Odsdp068woiYSFRaER5xvBtjJKnvi6-Z34kIbzZWNi9M7EwW8xbHpsfLxLAPn-biEeZk-6CeONewjkdoXn1_-kBaeHY_OCHb0qPtK0bBT3c';
+const FALLBACK_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHVZxbBAw1MZDO54u_X6P655WRbDFzfgp5haeDsIbXuMOo_B5pIwBH_W2b9cFNtigxWRF2yCx1IMSdbzZ1BJ7MpqtIlDNrWOp0xXsHZY4dTD_EatPQSwIk_06fzfWInCfG9eBiSlxYoR28eAXQHLOYYlPEth4BQTG3Odsdp068woiYSFRaER5xvBtjJKnvi6-Z34kIbzZWNi9M7EwW8xbHpsfLxLAPn-biEeZk-6CeONewjkdoXn1_-kBaeHY_OCHb0qPtK0bBT3c';
 const BANNER_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSpGqsTIqWdtC7YsEyDncvMOlQ5er3JAf5lUYXHNI4lVPkr96YNS9Qdaq7p4Aq4jCGCvVp8EDhskyz2gjYoyhre2NjfGV43yf6a148TNXTsM4IJHk2FjKlWpFNjzsIEaG1ZZhr46qr3vRCNvDn_QTAvdfqTXHptUVjVeRUPiZvg23t2KSvZ7YSyO6_7lgUZbqv6qqzgZ9CTGm-RqTcOD6HpfmdUpWvNshXmT90Gb21DsTbLGChL_JHlX35iBZAF1_PxYT8GsuxHzg';
 
 const RARITY = {
@@ -74,6 +74,7 @@ export default function HomeScreen() {
   const coins      = profile?.coins ?? 0;
   const streak     = profile?.streak ?? 0;
   const username   = profile?.username ?? user?.email?.split('@')[0] ?? 'Adventurer';
+  const avatarUri  = profile?.avatar_url ?? FALLBACK_AVATAR;
 
   const completed  = habits.filter(h => h.isCompletedToday).length;
   const remaining  = habits.filter(h => !h.isCompletedToday).length;
@@ -114,7 +115,7 @@ export default function HomeScreen() {
             <Text style={s.gpText}>{coins.toLocaleString()} GP</Text>
           </View>
           <View style={s.avatarRing}>
-            <Image source={{ uri: AVATAR_URL }} style={s.avatarImg} />
+            <Image source={{ uri: avatarUri }} style={s.avatarImg} />
           </View>
         </View>
       </View>
@@ -129,7 +130,7 @@ export default function HomeScreen() {
           </View>
           {/* Avatar overlapping banner */}
           <View style={s.profileAvatarWrap}>
-            <Image source={{ uri: AVATAR_URL }} style={s.profileAvatar} />
+            <Image source={{ uri: avatarUri }} style={s.profileAvatar} />
           </View>
           <View style={s.profileInfo}>
             <Text style={s.profileName}>{username}</Text>

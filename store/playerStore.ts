@@ -4,10 +4,15 @@ import {
   applyXpGain,
   calculateStreakUpdate,
   getTitleForLevel,
-  xpThresholdForLevel,
   xpWithinCurrentLevel,
   xpForNextLevel,
 } from '../utils/gamification';
+import {
+  fetchEarnedAchievements,
+  checkAndUnlockAchievements,
+  fetchTotalCompletions,
+  ACHIEVEMENT_DEFS,
+} from '../utils/achievementService';
 
 interface PlayerState {
   profile: Profile | null;
@@ -17,11 +22,16 @@ interface PlayerState {
   isLoading: boolean;
   justLeveledUp: boolean;
   newLevel: number;
+  /** Set of achievement keys already earned (persisted in DB) */
+  earnedAchievements: Set<string>;
 
   loadProfile: (userId: string) => Promise<void>;
+  loadAchievements: (userId: string) => Promise<void>;
+  checkAchievements: (userId: string) => Promise<string[]>;
   awardXp: (userId: string, amount: number) => Promise<{ leveledUp: boolean; newLevel: number }>;
   awardCoins: (userId: string, amount: number) => Promise<void>;
   updateStreak: (userId: string) => Promise<void>;
+  updateProfileField: (userId: string, updates: Partial<Omit<Profile, 'id' | 'created_at'>>) => Promise<boolean>;
   clearLevelUpFlag: () => void;
   reset: () => void;
 }
@@ -42,19 +52,50 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isLoading: false,
   justLeveledUp: false,
   newLevel: 1,
+  earnedAchievements: new Set(),
 
   loadProfile: async (userId: string) => {
     set({ isLoading: true });
-    const profile = await fetchProfile(userId);
+    const [profile, earned] = await Promise.all([
+      fetchProfile(userId),
+      fetchEarnedAchievements(userId),
+    ]);
     if (profile) {
       set({
         profile,
         ...deriveDisplayValues(profile),
+        earnedAchievements: earned,
         isLoading: false,
       });
     } else {
       set({ isLoading: false });
     }
+  },
+
+  loadAchievements: async (userId: string) => {
+    const earned = await fetchEarnedAchievements(userId);
+    set({ earnedAchievements: earned });
+  },
+
+  checkAchievements: async (userId: string) => {
+    const { profile, earnedAchievements } = get();
+    if (!profile) return [];
+
+    const totalCompletions = await fetchTotalCompletions(userId);
+    const newlyUnlocked = await checkAndUnlockAchievements(
+      userId,
+      profile,
+      totalCompletions,
+      earnedAchievements
+    );
+
+    if (newlyUnlocked.length > 0) {
+      const updated = new Set(earnedAchievements);
+      newlyUnlocked.forEach((k) => updated.add(k));
+      set({ earnedAchievements: updated });
+    }
+
+    return newlyUnlocked;
   },
 
   awardXp: async (userId: string, amount: number) => {
@@ -115,6 +156,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
   },
 
+  updateProfileField: async (userId, updates) => {
+    const { profile } = get();
+    if (!profile) return false;
+    const ok = await updateProfile(userId, updates);
+    if (ok) {
+      set({ profile: { ...profile, ...updates } });
+    }
+    return ok;
+  },
+
   clearLevelUpFlag: () => set({ justLeveledUp: false }),
 
   reset: () =>
@@ -126,5 +177,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       isLoading: false,
       justLeveledUp: false,
       newLevel: 1,
+      earnedAchievements: new Set(),
     }),
 }));

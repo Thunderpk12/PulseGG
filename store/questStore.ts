@@ -89,6 +89,9 @@ export const useQuestStore = create<QuestState>((set, get) => ({
           newLevel: freshProfile.level,
         });
       }
+
+      // Check & persist newly earned achievements
+      await playerStore.checkAchievements(userId);
     }
 
     return result;

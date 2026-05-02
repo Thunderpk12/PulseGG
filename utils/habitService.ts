@@ -4,6 +4,7 @@ import { getBossDamage, calculateStreakUpdate, applyXpGain } from './gamificatio
 export interface Profile {
   id: string;
   username: string | null;
+  avatar_url: string | null;
   level: number;
   xp: number;
   coins: number;
