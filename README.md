@@ -1,8 +1,8 @@
 # PulseGG
 
-Plataforma web onde utilizadores registados fazem previsões de resultado para partidas de e-sports (CS2, Valorant, LoL) **antes do início** de cada jogo. Quando o resultado é confirmado, um leaderboard global e por torneio atualiza em **tempo real** para todos os utilizadores conectados.
+Web platform where registered users make match result predictions for e-sports matches (CS2, Valorant, LoL) **before the start** of each game. When the result is confirmed, a global and tournament leaderboard updates in **real-time** for all connected users.
 
-## Diagrama de arquitetura
+## Architecture Diagram
 
 ```
 PandaScore API ──(polling 60s)──► Node.js Server
@@ -16,28 +16,28 @@ PandaScore API ──(polling 60s)──► Node.js Server
                                                    → updates)
 ```
 
-## A decisão técnica principal
+## The main technical decision
 
-> "Quando um cliente liga a meio de uma sessão, simplesmente subscrever ao stream de eventos deixa o UI desatualizado. Resolvi enviando um snapshot completo no momento da ligação, antes de adicionar o socket à room. Isto garante que o estado inicial é sempre consistente, independentemente de quando o utilizador chegou."
+> "When a client connects in the middle of a session, simply subscribing to the event stream leaves the UI outdated. I solved this by sending a full snapshot at the moment of connection, before adding the socket to the room. This guarantees that the initial state is always consistent, regardless of when the user arrived."
 
-## Um tradeoff real
+## A real tradeoff
 
-> "Escolhi polling à PandaScore API a cada 60s em vez de depender de webhooks porque o free tier não os suporta. Internamente, uso WebSockets entre o server e os clientes para que o atraso máximo seja 60s mas a propagação para os clientes seja imediata."
+> "I chose polling the PandaScore API every 60s instead of relying on webhooks because the free tier doesn't support them. Internally, I use WebSockets between the server and the clients so that the maximum delay is 60s but the propagation to the clients is immediate."
 
 ## Production incident #X
 
-[Placeholder para o Issue no GitHub detalhando o bug real documentado, fechado com um PR e referenciado aqui.]
+[Placeholder for the GitHub Issue detailing the real documented bug, closed with a PR and referenced here.]
 
 ---
 
-## Tecnologias
+## Technologies
 
 - **Frontend:** Next.js, React, TypeScript, TailwindCSS
 - **Backend:** Node.js, Express, TypeScript, Socket.io
-- **Base de dados:** PostgreSQL (Supabase)
-- **Dados e-sports:** PandaScore API
+- **Database:** PostgreSQL (Supabase)
+- **E-sports data:** PandaScore API
 
-## Executando Localmente
+## Running Locally
 
 ### Backend (Server)
 ```bash
