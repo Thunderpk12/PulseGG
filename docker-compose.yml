@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # ── Next.js Frontend ──────────────────────────────────
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SERVER_URL=http://server:3001
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - pulsegg-net
+
+  # ── Node.js/Express Backend ───────────────────────────
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - CORS_ORIGIN=http://localhost:3000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PANDASCORE_API_KEY=${PANDASCORE_API_KEY}
+    restart: unless-stopped
+    networks:
+      - pulsegg-net
+
+networks:
+  pulsegg-net:
+    driver: bridge
