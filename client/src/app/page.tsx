@@ -3,7 +3,7 @@
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 
 export default function Home() {
-  const { leaderboard, lastUpdated } = useLeaderboard();
+  const { leaderboard, lastUpdated, isLoading } = useLeaderboard();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-gray-900 text-white">
@@ -25,9 +25,13 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {leaderboard.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={4} className="p-4 text-center text-gray-500">Loading snapshot...</td>
+                </tr>
+              ) : leaderboard.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">No players yet. Be the first to make a prediction! 🎮</td>
                 </tr>
               ) : (
                 leaderboard.map((entry, index) => (
